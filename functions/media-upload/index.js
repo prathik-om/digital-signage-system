@@ -29,23 +29,23 @@ module.exports = async (req, res) => {
             try {
                 const inputData = JSON.parse(body || '{}');
                 const { action } = inputData;
-
+                
                 // Initialize Catalyst
                 const app = catalyst.initialize(req);
 
                 switch (action) {
                     case 'listMedia':
                         res.writeHead(200, corsHeaders);
-                        res.end(JSON.stringify({
-                            success: true,
+                        res.end(JSON.stringify({ 
+                            success: true, 
                             media: [
                                 {
                                     ROWID: 1,
                                     file_name: 'sample-image.jpg',
                                     mime_type: 'image/jpeg',
                                     object_url: 'https://example.com/sample.jpg',
-                                    metadata: JSON.stringify({
-                                        uploaded_at: new Date().toISOString(),
+                                    metadata: JSON.stringify({ 
+                                        uploaded_at: new Date().toISOString(), 
                                         size: 150000
                                     })
                                 }
@@ -56,8 +56,8 @@ module.exports = async (req, res) => {
 
                     case 'uploadBase64':
                         res.writeHead(200, corsHeaders);
-                        res.end(JSON.stringify({
-                            success: true,
+                            res.end(JSON.stringify({ 
+                                success: true, 
                             message: 'File uploaded successfully',
                             row: { ROWID: Date.now() }
                         }));
@@ -65,15 +65,15 @@ module.exports = async (req, res) => {
 
                     default:
                         res.writeHead(400, corsHeaders);
-                        res.end(JSON.stringify({
-                            success: false,
+                            res.end(JSON.stringify({ 
+                                success: false, 
                             message: 'Invalid action'
-                        }));
-                }
-            } catch (parseError) {
+                            }));
+                        }
+                                        } catch (parseError) {
                 res.writeHead(400, corsHeaders);
-                res.end(JSON.stringify({
-                    success: false,
+                            res.end(JSON.stringify({ 
+                                success: false, 
                     message: 'Invalid JSON format'
                 }));
             }
@@ -81,8 +81,8 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         res.writeHead(500, corsHeaders);
-        res.end(JSON.stringify({
-            success: false,
+        res.end(JSON.stringify({ 
+            success: false, 
             message: 'Server error',
             error: error.message
         }));
