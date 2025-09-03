@@ -1,19 +1,15 @@
 const catalyst = require('zcatalyst-sdk-node');
 
 module.exports = async (req, res) => {
-    // CORS headers for all responses
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With, Origin',
-        'Access-Control-Allow-Credentials': 'false',
-        'Access-Control-Max-Age': '86400',
-        'Content-Type': 'application/json'
-    };
+    // Set CORS headers immediately for all requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin');
+    res.setHeader('Access-Control-Max-Age', '86400');
 
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        res.writeHead(200, corsHeaders);
+        res.statusCode = 200;
         res.end();
         return;
     }
@@ -39,7 +35,8 @@ module.exports = async (req, res) => {
                     case 'login':
                         // Simple auth check
                         if (email === 'admin@atrium.com' && password === 'admin123') {
-                            res.writeHead(200, corsHeaders);
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');
                             res.end(JSON.stringify({
                                 success: true,
                                 user: {
@@ -51,7 +48,8 @@ module.exports = async (req, res) => {
                                 message: 'Login successful'
                             }));
                         } else {
-                            res.writeHead(401, corsHeaders);
+                            res.statusCode = 401;
+                            res.setHeader('Content-Type', 'application/json');
                             res.end(JSON.stringify({
                                 success: false,
                                 message: 'Invalid credentials'
@@ -60,7 +58,8 @@ module.exports = async (req, res) => {
                         break;
 
                     case 'register':
-                        res.writeHead(200, corsHeaders);
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({
                             success: true,
                             message: 'Registration feature coming soon'
@@ -68,14 +67,16 @@ module.exports = async (req, res) => {
                         break;
 
                     default:
-                        res.writeHead(400, corsHeaders);
+                        res.statusCode = 400;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({
                             success: false,
                             message: 'Invalid action'
                         }));
                 }
             } catch (parseError) {
-                res.writeHead(400, corsHeaders);
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({
                     success: false,
                     message: 'Invalid JSON format'
@@ -84,7 +85,8 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        res.writeHead(500, corsHeaders);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({
             success: false,
             message: 'Server error',
