@@ -12,33 +12,8 @@ import config, { getApiUrl } from './config.js';
 // API configuration for Catalyst functions
 const API_BASE_URL = config.API_BASE_URL;
 
-// Real backend only - no demo data
-
 // API service functions
 const apiService = {
-  async login(email, password) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ action: 'login', email, password })
-      });
-      
-      if (!response.ok) {
-        console.error('HTTP error:', response.status);
-        return { success: false, message: `HTTP ${response.status} error` };
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error; // Don't fall back to demo data
-    }
-  },
-
   async getContent() {
     try {
       const response = await fetch(`${API_BASE_URL}/content`, {
@@ -74,107 +49,14 @@ const apiService = {
   }
 };
 
-// Login Component
-const Login = ({ onLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await apiService.login(email, password);
-      
-      if (result.success) {
-        onLogin(result.user);
-      } else {
-        setError(result.message || 'Login failed');
-      }
-    } catch (error) {
-      setError('An error occurred during login');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Digital Signage Dashboard
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 // Sidebar Component
-const Sidebar = ({ user, onLogout }) => {
+const Sidebar = () => {
   return (
     <div className="w-64 bg-white shadow-lg">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">
-          Welcome back, {user?.name || 'User'}!
+          Digital Signage System
         </p>
       </div>
       
@@ -202,7 +84,7 @@ const Sidebar = ({ user, onLogout }) => {
             to="/scheduling"
             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
           >
-            Schedule Management
+            Scheduling
           </Link>
           <Link
             to="/emergency"
@@ -214,25 +96,16 @@ const Sidebar = ({ user, onLogout }) => {
             to="/settings"
             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
           >
-            Timer Settings
+            Settings
           </Link>
         </div>
       </nav>
-      
-      <div className="absolute bottom-0 w-64 p-4">
-        <button
-          onClick={onLogout}
-          className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
-        >
-          Sign out
-        </button>
-      </div>
     </div>
   );
 };
 
 // Dashboard Component
-const Dashboard = ({ user }) => {
+const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     totalContent: 0,
     totalPlaylists: 0,
@@ -607,52 +480,18 @@ const EmergencyManager = () => {
 };
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is logged in (stored in localStorage)
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   return (
     <Router>
       <div className="flex h-screen bg-gray-50">
-        <Sidebar user={user} onLogout={handleLogout} />
+        <Sidebar />
         <div className="flex-1 overflow-auto">
           <Routes>
-            <Route path="/" element={<Dashboard user={user} />} />
-            <Route path="/content" element={<ContentManager user={user} />} />
-            <Route path="/playlists" element={<PlaylistManager user={user} />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/content" element={<ContentManager />} />
+            <Route path="/playlists" element={<PlaylistManager />} />
             <Route path="/scheduling" element={<AdvancedScheduling />} />
             <Route path="/emergency" element={<EmergencyManager />} />
-            <Route path="/settings" element={<SettingsManager user={user} />} />
+            <Route path="/settings" element={<SettingsManager />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
