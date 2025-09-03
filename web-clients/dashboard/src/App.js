@@ -24,7 +24,7 @@ const apiService = {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ data: { action: 'login', email, password } })
+        body: JSON.stringify({ action: 'login', email, password })
       });
       
       if (!response.ok) {
@@ -47,7 +47,7 @@ const apiService = {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ data: { action: 'getAll' } })
+        body: JSON.stringify({ action: 'getAll' })
       });
       return await response.json();
     } catch (error) {
@@ -64,7 +64,7 @@ const apiService = {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ data: { action: 'getAll' } })
+        body: JSON.stringify({ action: 'getAll' })
       });
       return await response.json();
     } catch (error) {
@@ -373,7 +373,7 @@ const AdvancedScheduling = () => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ data: { action: 'getAll' } })
+        body: JSON.stringify({ action: 'getAll' })
       });
       
       const result = await response.json();
@@ -441,7 +441,7 @@ const EmergencyManager = () => {
       const response = await fetch(`${API_BASE_URL}/emergency`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { action: 'getAll' } })
+        body: JSON.stringify({ action: 'getAll' })
       });
       
       const result = await response.json();
@@ -474,10 +474,8 @@ const EmergencyManager = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          data: {
-            action: 'create',
-            emergency: newEmergency
-          }
+          action: 'create',
+          emergency: newEmergency
         })
       });
       
