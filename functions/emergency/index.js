@@ -1,19 +1,15 @@
 const catalyst = require('zcatalyst-sdk-node');
 
 module.exports = async (req, res) => {
-    // CORS headers for all responses
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With, Origin',
-        'Access-Control-Allow-Credentials': 'false',
-        'Access-Control-Max-Age': '86400',
-        'Content-Type': 'application/json'
-    };
+    // Set CORS headers immediately for all requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin');
+    res.setHeader('Access-Control-Max-Age', '86400');
 
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        res.writeHead(200, corsHeaders);
+        res.statusCode = 200;
         res.end();
         return;
     }
@@ -34,20 +30,24 @@ module.exports = async (req, res) => {
                 const app = catalyst.initialize(req);
 
                 switch (action) {
-                    case 'getActive':
-                        res.writeHead(200, corsHeaders);
+                    case 'getAll':
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({
                             success: true,
-                            emergencies: [
+                            messages: [
                                 {
-                                    id: 1,
-                                    title: 'System Test',
-                                    message: 'This is a test emergency message',
-                                    importance: 'medium',
-                                    background_color: '#FFA500',
-                                    text_color: '#000000',
-                                    is_active: true,
-                                    created_at: new Date().toISOString()
+                                    emergency_messages: {
+                                        ROWID: 1,
+                                        title: 'System Test',
+                                        message: 'This is a test emergency message',
+                                        importance: 'medium',
+                                        background_color: '#FFA500',
+                                        text_color: '#000000',
+                                        is_active: true,
+                                        CREATEDTIME: new Date().toISOString(),
+                                        MODIFIEDTIME: new Date().toISOString()
+                                    }
                                 }
                             ],
                             message: 'Emergency messages retrieved'
@@ -55,7 +55,8 @@ module.exports = async (req, res) => {
                         break;
 
                     case 'create':
-                        res.writeHead(200, corsHeaders);
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({
                             success: true,
                             message: 'Emergency message created',
@@ -64,7 +65,8 @@ module.exports = async (req, res) => {
                         break;
 
                     case 'clear':
-                        res.writeHead(200, corsHeaders);
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({
                             success: true,
                             message: 'Emergency messages cleared'
@@ -72,14 +74,16 @@ module.exports = async (req, res) => {
                         break;
 
                     default:
-                        res.writeHead(400, corsHeaders);
+                        res.statusCode = 400;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({
                             success: false,
                             message: 'Invalid action'
                         }));
                 }
             } catch (parseError) {
-                res.writeHead(400, corsHeaders);
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({
                     success: false,
                     message: 'Invalid JSON format'
@@ -88,7 +92,8 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        res.writeHead(500, corsHeaders);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({
             success: false,
             message: 'Server error',
