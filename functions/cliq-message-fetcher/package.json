@@ -1,0 +1,21 @@
+{
+  "name": "cliq-message-fetcher",
+  "version": "1.0.0",
+  "description": "Fetch historical messages from Zoho Cliq channels and convert to digital signage media",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "zoho",
+    "cliq",
+    "messages",
+    "digital-signage",
+    "catalyst"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

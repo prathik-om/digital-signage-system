@@ -1,0 +1,8 @@
+{
+  "catalyst-config": {
+    "scope": [
+      "ZohoCliq.READ",
+      "ZohoCliq.WRITE"
+    ]
+  }
+}

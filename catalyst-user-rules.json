@@ -1,0 +1,40 @@
+{
+  "rules": [
+    {
+      "name": "playlist",
+      "path": "/playlist",
+      "function": "playlist"
+    },
+    {
+      "name": "media-upload",
+      "path": "/media-upload",
+      "function": "media-upload"
+    },
+    {
+      "name": "content",
+      "path": "/content",
+      "function": "content"
+    },
+    {
+      "name": "auth",
+      "path": "/auth",
+      "function": "auth"
+    },
+    {
+      "name": "emergency",
+      "path": "/emergency",
+      "function": "emergency"
+    },
+    {
+      "name": "events",
+      "path": "/events",
+      "function": "events"
+    },
+    {
+      "name": "zoho-integration",
+      "path": "/zoho-integration",
+      "function": "zoho-integration"
+    }
+  ]
+}
+

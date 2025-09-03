@@ -1,0 +1,44 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "17550000000010120",
+      "name": "Atrium",
+      "domain": {
+        "id": "50030161287",
+        "name": "atrium-60045083855.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60045083855",
+          "name": "Development",
+          "type": 3,
+          "env_status": "Active",
+          "project_details": {
+            "project_name": "Atrium",
+            "id": "17550000000010120",
+            "project_type": "Live"
+          },
+          "is_default": false,
+          "action_required": false
+        },
+        {
+          "idx": 2,
+          "id": "50032899419",
+          "name": "Production",
+          "type": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "settings",
+  "version": "1.0.0",
+  "description": "Settings management function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["catalyst", "settings", "digital-signage"],
+  "author": "",
+  "license": "ISC"
+}

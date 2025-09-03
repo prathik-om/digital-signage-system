@@ -1,0 +1,102 @@
+{
+  "projectName": "Atrium",
+  "projectId": "17550000000010120",
+  "version": "1.0.0",
+  "description": "Digital signage application with Advanced I/O functions",
+  "functions": {
+    "targets": [
+      "auth",
+      "content",
+      "emergency",
+      "playlist",
+      "zoho-integration",
+      "media-upload",
+      "settings"
+    ],
+    "deployment": {
+      "stack": "node18"
+    },
+    "ignore": [],
+    "source": "functions"
+  },
+  "dataStores": [
+    {
+      "name": "users",
+      "tableName": "users"
+    },
+    {
+      "name": "events",
+      "tableName": "events"
+    },
+    {
+      "name": "screens",
+      "tableName": "screens"
+    },
+    {
+      "name": "thematic_backgrounds",
+      "tableName": "thematic_backgrounds"
+    },
+    {
+      "name": "announcements",
+      "tableName": "announcements"
+    },
+    {
+      "name": "media_files",
+      "tableName": "media_files"
+    },
+    {
+      "name": "playlists",
+      "tableName": "playlists"
+    },
+    {
+      "name": "playlist_items",
+      "tableName": "playlist_items"
+    },
+    {
+      "name": "emergency_messages",
+      "tableName": "emergency_messages"
+    },
+    {
+      "name": "screen_logs",
+      "tableName": "screen_logs"
+    },
+    {
+      "name": "content",
+      "tableName": "content"
+    },
+    {
+      "name": "content_templates",
+      "tableName": "content_templates"
+    },
+    {
+      "name": "webhook_configs",
+      "tableName": "webhook_configs"
+    },
+    {
+      "name": "schedules",
+      "tableName": "schedules"
+    },
+    {
+      "name": "settings",
+      "tableName": "settings"
+    }
+  ],
+  "fileStores": [
+    {
+      "name": "media",
+      "folderName": "media"
+    }
+  ],
+  "appsail": [
+    {
+      "source": "web-clients/dashboard",
+      "name": "dashboard"
+    }
+  ],
+  "slate": [
+    {
+      "name": "dashboard-app",
+      "source": "/Users/prathik-5897/Desktop/ProjectorP/web-clients/dashboard"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "auth-function",
+  "version": "1.0.0",
+  "description": "Authentication function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  }
+}

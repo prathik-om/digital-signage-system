@@ -1,0 +1,18 @@
+{
+  "functionName": "auto-setup",
+  "functionType": "http",
+  "functionVersion": "1.0.0",
+  "functionDescription": "Automated database setup function for digital signage system",
+  "functionHandler": "index.js",
+  "functionRuntime": "node18",
+  "functionTimeout": 300,
+  "functionMemory": 512,
+  "functionTriggers": [],
+  "functionEvents": [],
+  "functionPermissions": [
+    "datastore"
+  ],
+  "deployment": {
+    "stack": "node18"
+  }
+}

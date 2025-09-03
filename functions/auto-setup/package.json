@@ -1,0 +1,20 @@
+{
+  "name": "auto-setup",
+  "version": "1.0.0",
+  "description": "Automated database setup function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "catalyst",
+    "database",
+    "setup",
+    "automation"
+  ],
+  "author": "Digital Signage System",
+  "license": "ISC"
+}

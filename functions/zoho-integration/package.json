@@ -1,0 +1,10 @@
+{
+  "name": "zoho-integration-function",
+  "version": "1.0.0",
+  "description": "Zoho integration function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "sharp": "^0.34.3",
+    "zcatalyst-sdk-node": "latest"
+  }
+}

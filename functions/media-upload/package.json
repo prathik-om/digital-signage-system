@@ -1,0 +1,11 @@
+{
+  "name": "media-upload",
+  "version": "1.0.0",
+  "description": "Media upload function for Stratus presigned URLs and File Store fallback",
+  "main": "index.js",
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "sharp": "^0.34.3",
+    "zcatalyst-sdk-node": "latest"
+  }
+}

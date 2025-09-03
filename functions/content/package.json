@@ -1,0 +1,9 @@
+{
+  "name": "content-function",
+  "version": "1.0.0",
+  "description": "Content management function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  }
+}

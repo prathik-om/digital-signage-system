@@ -1,0 +1,10 @@
+{
+  "name": "playlist-function",
+  "version": "1.0.0",
+  "description": "Playlist management function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "sqlite3": "^5.1.7",
+    "zcatalyst-sdk-node": "latest"
+  }
+}
