@@ -20,8 +20,7 @@ const FOLDER_ID = '38435000000022100'; // Your specific folder ID
 const getCatalystAuthHeaders = () => {
   // Proper JSON content-type with secure CORS handling at gateway level
   return {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Content-Type': 'application/json'
   };
 };
 

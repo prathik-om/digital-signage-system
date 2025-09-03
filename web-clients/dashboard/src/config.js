@@ -40,8 +40,7 @@ export const { API_BASE_URL, API_ENDPOINTS, DEFAULT_SETTINGS, UI, FEATURES } = c
 // Helper function to get Catalyst authentication headers
 export const getCatalystAuthHeaders = () => {
   return {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Content-Type': 'application/json'
   };
 };
 

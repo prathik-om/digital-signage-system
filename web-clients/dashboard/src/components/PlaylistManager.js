@@ -21,8 +21,7 @@ const PlaylistManager = () => {
 
   // Catalyst Auth Headers
   const getCatalystAuthHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    'Content-Type': 'application/json'
   });
 
   // Fetch playlists from backend
@@ -33,7 +32,7 @@ const PlaylistManager = () => {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify({ 
-          data: { action: 'getAll' }
+          action: 'getAll'
         })
       });
 
@@ -67,7 +66,7 @@ const PlaylistManager = () => {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify({ 
-          data: { action: 'listMedia' }
+          action: 'listMedia'
         })
       });
 
@@ -106,7 +105,7 @@ const PlaylistManager = () => {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify({ 
-          data: { action: 'checkSchema' }
+          action: 'checkSchema'
         })
       });
 
@@ -155,13 +154,11 @@ const PlaylistManager = () => {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify({ 
-          data: {
-            action: 'create',
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            duration: formData.duration,
-            items: formData.selectedContent.map(contentId => ({ id: contentId }))
-          }
+          action: 'create',
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          duration: formData.duration,
+          items: formData.selectedContent.map(contentId => ({ id: contentId }))
         })
       });
 
@@ -226,14 +223,12 @@ const PlaylistManager = () => {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify({ 
-          data: {
-            action: 'update',
-            playlist_id: editingPlaylist.id,
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            duration: formData.duration,
-            selectedContent: formData.selectedContent.map(contentId => ({ id: contentId }))
-          }
+          action: 'update',
+          playlist_id: editingPlaylist.id,
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          duration: formData.duration,
+          selectedContent: formData.selectedContent.map(contentId => ({ id: contentId }))
         })
       });
 
@@ -279,10 +274,8 @@ const PlaylistManager = () => {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify({ 
-          data: {
-            action: 'delete',
-            playlist_id: playlistId
-          }
+          action: 'delete',
+          playlist_id: playlistId
         })
       });
 

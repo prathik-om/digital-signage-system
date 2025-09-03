@@ -10,14 +10,11 @@ const eventAPI = {
       const response = await fetch('/playlist', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          data: {
-            action: 'createEventWithPlaylist',
-            event: eventData
-          }
+          action: 'createEventWithPlaylist',
+          event: eventData
         })
       });
       
@@ -34,13 +31,10 @@ const eventAPI = {
       const response = await fetch('/content', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          data: {
-            action: 'getAllEvents'
-          }
+          action: 'getAllEvents'
         })
       });
       
