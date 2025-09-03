@@ -19,8 +19,7 @@ const apiService = {
       const response = await fetch(`${API_BASE_URL}/content`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ action: 'getAll' })
       });
@@ -36,8 +35,7 @@ const apiService = {
       const response = await fetch(`${API_BASE_URL}/playlist`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ action: 'getAll' })
       });
