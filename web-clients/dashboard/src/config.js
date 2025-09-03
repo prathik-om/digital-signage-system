@@ -1,7 +1,7 @@
 // Configuration file for the dashboard
 const config = {
   // API configuration - Updated to use working Catalyst API Gateway
-  API_BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://atrium-60045083855.catalystserverless.in',
+  API_BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://atrium-60045083855.development.catalystserverless.in',
   
   // API endpoints for Catalyst functions
   API_ENDPOINTS: {
