@@ -4,11 +4,10 @@ import {
   Home, 
   Image, 
   List, 
-  AlertTriangle, 
-  Settings, 
   LogOut,
   User
 } from 'lucide-react';
+import UserProfile from './UserProfile';
 
 const Sidebar = ({ user, onLogout }) => {
   const location = useLocation();
@@ -17,7 +16,6 @@ const Sidebar = ({ user, onLogout }) => {
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/content', icon: Image, label: 'Content' },
     { path: '/playlists', icon: List, label: 'Playlists' },
-    { path: '/emergency', icon: AlertTriangle, label: 'Emergency' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -28,6 +26,11 @@ const Sidebar = ({ user, onLogout }) => {
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-xl font-bold text-gray-900">Digital Signage</h1>
         <p className="text-sm text-gray-600 mt-1">Event Management</p>
+        
+        {/* User Profile */}
+        <div className="mt-4">
+          <UserProfile />
+        </div>
       </div>
 
       {/* Navigation */}

@@ -10,11 +10,12 @@ import {
   Search,
   FileText
 } from 'lucide-react';
-import config, { getApiUrl } from '../config.js';
+import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/apiService';
+import config, { MEDIA } from '../config';
 
-// API configuration for Catalyst functions (production environment)
-// Using direct Catalyst endpoints
-const FOLDER_ID = '38435000000022100'; // Your specific folder ID
+// Use FOLDER_ID from config
+const FOLDER_ID = MEDIA.FOLDER_ID;
 
 // Catalyst authentication helper
 const getCatalystAuthHeaders = () => {
@@ -111,7 +112,8 @@ const optimizeImageOnFrontend = (file) => {
   });
 };
 
-const ContentManager = ({ user }) => {
+const ContentManager = () => {
+  const { currentUserId } = useAuth();
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -126,25 +128,11 @@ const ContentManager = ({ user }) => {
   const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
 
-  // Fetch playlists from backend
+  // Fetch playlists from backend using apiService
   const fetchPlaylists = useCallback(async () => {
     try {
-              console.log('Fetching playlists from:', getApiUrl('/playlist'));
-        const response = await fetch(getApiUrl('/playlist'), {
-        method: 'POST',
-        headers: getCatalystAuthHeaders(),
-        body: JSON.stringify({ 
-          data: {
-            action: 'getAll'
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
+      console.log('Fetching playlists for user:', currentUserId);
+      const result = await apiService.getPlaylists(currentUserId);
       console.log('Playlists response:', result);
 
       if (result.success && result.playlists) {
@@ -155,36 +143,26 @@ const ContentManager = ({ user }) => {
     } catch (error) {
       console.error('Error fetching playlists:', error);
     }
-  }, []);
+  }, [currentUserId]);
 
-  // Fetch content from backend
+  // Fetch content from backend using apiService
   const fetchContent = useCallback(async () => {
     try {
       setLoading(true);
-                    console.log('Fetching content from:', getApiUrl('/media-upload'));
-        const response = await fetch(getApiUrl('/media-upload'), {
-        method: 'POST',
-        headers: getCatalystAuthHeaders(),
-        body: JSON.stringify({ 
-          data: {
-            action: 'listMedia'
-            // Removed folder_id filter to show all files from the bucket
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('Fetching content for user:', currentUserId);
+      
+      if (!currentUserId) {
+        throw new Error('User ID is required to fetch content');
       }
-
-      const result = await response.json();
+      
+      const result = await apiService.getContent(currentUserId);
       console.log('Content response:', result);
 
-      if (result.success && result.media) {
-        console.log('Raw API response media:', result.media);
+      if (result.success && result.content) {
+        console.log('Raw API response content:', result.content);
         
         // Transform the API response to match our UI format
-        const transformedContent = result.media.map(item => {
+        const transformedContent = result.content.map(item => {
           console.log('Processing item:', item);
           
           // Check if item is valid before processing
@@ -208,7 +186,22 @@ const ContentManager = ({ user }) => {
           
           // Handle different object URL sources
           let objectUrl = item.object_url;
-          if (metadata.storage === 'stratus' && metadata.stratus_url) {
+          
+          // Check for Stratus file storage (real Stratus URLs)
+          if (item.stratus_bucket && item.stratus_object_key && !item.stratus_object_key.startsWith('data:')) {
+            // Generate real Stratus file URL using your bucket URL
+            objectUrl = `https://atrium-media-development.zohostratus.in/${item.stratus_object_key}`;
+          }
+          // Check for data URL stored in stratus_object_key (legacy/fallback)
+          else if (item.stratus_object_key && item.stratus_object_key.startsWith('data:')) {
+            objectUrl = item.stratus_object_key; // Use data URL directly for immediate preview
+          }
+          // Check for regular object_url
+          else if (item.object_url && item.object_url.startsWith('data:')) {
+            objectUrl = item.object_url; // Use data URL directly for immediate preview
+          }
+          // Check for other Stratus URL sources
+          else if (metadata.storage === 'stratus' && metadata.stratus_url) {
             objectUrl = metadata.stratus_url;
           }
           
@@ -221,9 +214,16 @@ const ContentManager = ({ user }) => {
             file_type: getFileType(item.mime_type || item.mimeType || item.content_type),
             description: item.file_description || item.description || item.content || 'No description',
             uploaded_at: uploadedAt,
-            file_size: formatFileSize(item.size_bytes || item.sizeBytes || item.file_size),
+            file_size: (() => {
+              const rawSize = item.size_bytes || item.sizeBytes || item.file_size;
+              console.log('🔍 File size debug:', { title: item.title, rawSize, type: typeof rawSize });
+              return formatFileSize(rawSize);
+            })(),
             mime_type: item.mime_type || item.mimeType || item.content_type,
             object_url: objectUrl,
+            bucket: item.stratus_bucket, // Add bucket info for display logic
+            stratus_bucket: item.stratus_bucket, // Keep original field
+            stratus_object_key: item.stratus_object_key, // Keep original field
             metadata: metadata
           };
         }).filter(Boolean); // Remove any null items
@@ -250,12 +250,12 @@ const ContentManager = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     fetchContent();
     fetchPlaylists();
-  }, [fetchContent, fetchPlaylists]);
+  }, [fetchContent, fetchPlaylists, currentUserId]);
 
   // Debug logging for content state changes
   useEffect(() => {
@@ -316,19 +316,27 @@ const ContentManager = ({ user }) => {
   };
 
   const getFileType = (mimeType) => {
-    if (mimeType?.startsWith('image/')) return 'image';
-    if (mimeType?.startsWith('video/')) return 'video';
-    if (mimeType?.startsWith('text/')) return 'text';
-    if (mimeType?.includes('pdf')) return 'document';
+    if (!mimeType) return 'file';
+    // Handle both "image/png" and "image" formats
+    if (mimeType.startsWith('image/') || mimeType === 'image') return 'image';
+    if (mimeType.startsWith('video/') || mimeType === 'video') return 'video';
+    if (mimeType.startsWith('text/') || mimeType === 'text') return 'text';
+    if (mimeType.includes('pdf') || mimeType === 'document') return 'document';
     return 'file';
   };
 
   const formatFileSize = (bytes) => {
-    if (!bytes || isNaN(bytes) || bytes <= 0) return 'Unknown size';
+    if (!bytes || bytes === 'null' || bytes === null) return 'Unknown size';
+    
+    // Convert string to number if needed
+    const numBytes = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes;
+    
+    if (isNaN(numBytes) || numBytes <= 0) return 'Unknown size';
+    
     try {
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+      const i = Math.floor(Math.log(numBytes) / Math.log(1024));
+      return Math.round(numBytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
     } catch (error) {
       console.warn('Error formatting file size:', error);
       return 'Unknown size';
@@ -359,6 +367,11 @@ const ContentManager = ({ user }) => {
   const handleUpload = async (selectedFile) => {
     if (!selectedFile) {
       setError('Please select a file to upload.');
+      return;
+    }
+
+    if (!currentUserId) {
+      setError('User ID is required to upload content.');
       return;
     }
 
@@ -427,12 +440,11 @@ const ContentManager = ({ user }) => {
       const base64 = await fileToBase64(fileToUpload);
       
       const requestBody = {
-        data: {
-          action: 'uploadBase64',
-          data_base64: base64,
-          file_name: selectedFile.name,
-          folder_id: FOLDER_ID
-        }
+        action: 'uploadBase64',
+        data_base64: base64,
+        file_name: selectedFile.name,
+        folder_id: FOLDER_ID,
+        user_id: currentUserId
       };
 
       const requestBodyString = JSON.stringify(requestBody);
@@ -448,7 +460,8 @@ const ContentManager = ({ user }) => {
         return;
       }
 
-              const response = await fetch(getApiUrl('/media-upload'), {
+              // Use the correct media-upload endpoint from config
+              const response = await fetch(`${config.API_BASE_URL}/media-upload`, {
         method: 'POST',
         headers: getCatalystAuthHeaders(),
         body: JSON.stringify(requestBody)
@@ -479,16 +492,16 @@ const ContentManager = ({ user }) => {
             console.log('🔍 [Frontend] result.row:', result.row);
             
             const playlistRequestBody = {
-              data: {
-                action: 'addContent',
-                playlist_id: selectedPlaylist,
-                content_id: result.row.ROWID
-              }
+              action: 'addContent',
+              playlist_id: selectedPlaylist,
+              content_id: result.row.ROWID,
+              user_id: currentUserId
             };
             
             console.log('🔍 [Frontend] playlistRequestBody:', JSON.stringify(playlistRequestBody, null, 2));
 
-            const playlistResponse = await fetch(getApiUrl('/playlist'), {
+            // Use the correct playlist endpoint from config
+            const playlistResponse = await fetch(`${config.API_BASE_URL}/playlist`, {
               method: 'POST',
               headers: getCatalystAuthHeaders(),
               body: JSON.stringify(playlistRequestBody)
@@ -554,18 +567,23 @@ const ContentManager = ({ user }) => {
 
   const handleDelete = async (contentId) => {
     if (window.confirm('Are you sure you want to delete this content? This will also remove it from all playlists.')) {
+      if (!currentUserId) {
+        setError('User ID is required to delete content.');
+        return;
+      }
+
       try {
         console.log('Deleting content with ID:', contentId);
         
         // Step 1: Delete the media file
-        const response = await fetch(getApiUrl('/media-upload'), {
+        // Use the correct media-upload endpoint from config
+        const response = await fetch(`${config.API_BASE_URL}/media-upload`, {
           method: 'POST',
           headers: getCatalystAuthHeaders(),
           body: JSON.stringify({
-            data: {
-              action: 'deleteMedia',
-              media_id: contentId
-            }
+            action: 'deleteMedia',
+            media_id: contentId,
+            user_id: currentUserId
           })
         });
 
@@ -699,23 +717,40 @@ const ContentManager = ({ user }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {(filteredContent || []).filter(item => item && item.id && item.file_name).map((item) => (
-            <div key={item.id || item.ROWID || `item-${Math.random()}`} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+          {(filteredContent || []).filter(item => item && item.id && item.file_name).map((item, index) => (
+            <div key={item.id || item.ROWID || `item-${index}`} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
               {/* Image Thumbnail for Image Files */}
               {item.file_type === 'image' && item.object_url && (
                 <div className="mb-3">
-                  {/* For Stratus files, show placeholder since they require authentication */}
+                  {/* For Stratus files, show actual image since they're publicly accessible */}
                   {(item.bucket || '') === 'atrium-media' ? (
-                    <div 
-                      className="w-full h-32 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border flex items-center justify-center cursor-pointer hover:from-blue-100 hover:to-indigo-200 transition-all"
-                      onClick={() => item.object_url ? window.open(item.object_url, '_blank') : null}
-                    >
-                      <div className="text-center">
-                        <ImageIcon className="w-8 h-8 mx-auto text-blue-400 mb-1" />
-                        <p className="text-xs text-blue-600 font-medium">Stratus Image</p>
-                        <p className="text-xs text-blue-500">Click to view</p>
+                    <>
+                      <img 
+                        src={item.object_url} 
+                        alt={item.file_name || 'Content item'}
+                        className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => item.object_url ? window.open(item.object_url, '_blank') : null}
+                        onError={(e) => {
+                          console.error('Failed to load Stratus image:', item.object_url);
+                          e.target.style.display = 'none';
+                          if (e.target.nextSibling) {
+                            e.target.nextSibling.style.display = 'block';
+                          }
+                        }}
+                      />
+                      {/* Fallback placeholder for failed Stratus images */}
+                      <div 
+                        className="w-full h-32 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border flex items-center justify-center cursor-pointer hover:from-blue-100 hover:to-indigo-200 transition-all"
+                        style={{ display: 'none' }}
+                        onClick={() => item.object_url ? window.open(item.object_url, '_blank') : null}
+                      >
+                        <div className="text-center">
+                          <ImageIcon className="w-8 h-8 mx-auto text-blue-400 mb-1" />
+                          <p className="text-xs text-blue-600 font-medium">Stratus Image</p>
+                          <p className="text-xs text-blue-500">Click to view</p>
+                        </div>
                       </div>
-                    </div>
+                    </>
                   ) : (
                     /* For database-fallback files, try to show actual image */
                     <img 
@@ -844,10 +879,11 @@ const ContentManager = ({ user }) => {
                     className="flex-1 border rounded-lg px-3 py-2"
                   >
                     <option value="">Select a playlist...</option>
-                    {playlists.map((playlist) => {
+                    {playlists.map((playlist, index) => {
                       const playlistData = playlist.playlists || playlist;
+                      const uniqueKey = playlistData.ROWID || playlistData.id || `playlist-${index}`;
                       return (
-                        <option key={playlistData.ROWID || playlistData.id} value={playlistData.ROWID || playlistData.id}>
+                        <option key={uniqueKey} value={playlistData.ROWID || playlistData.id}>
                           {playlistData.name || playlistData.description || 'Unnamed Playlist'}
                         </option>
                       );
@@ -881,18 +917,18 @@ const ContentManager = ({ user }) => {
                             // Clear any previous errors
                             setError('');
                             
-                            const requestBody = { 
-                              data: {
-                                action: 'create',
-                                name: newPlaylistName,
-                                description: '',
-                                items: []
-                              }
+                                                        const requestBody = {
+                              action: 'create',
+                              name: newPlaylistName,
+                              description: '',
+                              items: [],
+                              user_id: currentUserId
                             };
                             console.log('🔍 [Frontend] Creating playlist with request body:', JSON.stringify(requestBody, null, 2));
                             console.log('🔍 [Frontend] Using headers:', getCatalystAuthHeaders());
                             
-                            const response = await fetch(getApiUrl('/playlist'), {
+                            // Use the correct playlist endpoint from config
+                            const response = await fetch(`${config.API_BASE_URL}/playlist`, {
                               method: 'POST',
                               headers: getCatalystAuthHeaders(),
                               body: JSON.stringify(requestBody)

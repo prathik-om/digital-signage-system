@@ -1,0 +1,23 @@
+{
+  "name": "tv-player",
+  "version": "1.0.0",
+  "description": "Digital Signage TV Player",
+  "build": {
+    "command": "npm run build",
+    "output": "build"
+  },
+  "routes": [
+    {
+      "path": "/static/*",
+      "target": "/static/*"
+    },
+    {
+      "path": "/*",
+      "target": "/index.html"
+    }
+  ],
+  "environment": {
+    "REACT_APP_API_BASE_URL": "https://atrium-60045083855.development.catalystserverless.in",
+    "NODE_ENV": "production"
+  }
+}

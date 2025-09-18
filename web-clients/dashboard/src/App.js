@@ -3,25 +3,30 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-ro
 import './App.css';
 import ContentManager from './components/ContentManager';
 import PlaylistManager from './components/PlaylistManager';
-import ScheduleManager from './components/ScheduleManager';
+import EventManager from './components/EventManager';
+import ScreenManager from './components/ScreenManager';
 import SettingsManager from './components/SettingsManager';
+import Login from './components/Login';
+import OAuthCallback from './components/OAuthCallback';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Import configuration
-import config, { getApiUrl } from './config.js';
+import config from './config.js';
 
 // API configuration for Catalyst functions
 const API_BASE_URL = config.API_BASE_URL;
 
 // API service functions
 const apiService = {
-  async getContent() {
+  async getContent(userId) {
     try {
       const response = await fetch(`${API_BASE_URL}/content`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', user_id: userId })
       });
       return await response.json();
     } catch (error) {
@@ -30,14 +35,14 @@ const apiService = {
     }
   },
 
-  async getPlaylists() {
+  async getPlaylists(userId) {
     try {
       const response = await fetch(`${API_BASE_URL}/playlist`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', user_id: userId })
       });
       return await response.json();
     } catch (error) {
@@ -49,8 +54,10 @@ const apiService = {
 
 // Sidebar Component
 const Sidebar = () => {
+  const { user, logout } = useAuth();
+
   return (
-    <div className="w-64 bg-white shadow-lg">
+    <div className="w-64 bg-white shadow-lg flex flex-col">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">
@@ -67,6 +74,12 @@ const Sidebar = () => {
             Dashboard
           </Link>
           <Link
+            to="/events"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
+          >
+            Event Management
+          </Link>
+          <Link
             to="/content"
             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
           >
@@ -79,16 +92,10 @@ const Sidebar = () => {
             Playlist Management
           </Link>
           <Link
-            to="/scheduling"
+            to="/google-photos"
             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
           >
-            Scheduling
-          </Link>
-          <Link
-            to="/emergency"
-            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
-          >
-            Emergency Messages
+            Google Photos
           </Link>
           <Link
             to="/settings"
@@ -98,12 +105,43 @@ const Sidebar = () => {
           </Link>
         </div>
       </nav>
+      
+      {/* User Info and Logout */}
+      <div className="mt-auto p-4 border-t border-gray-200">
+        {user && (
+          <div className="mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-medium text-sm">
+                  {user.firstName ? user.firstName.charAt(0) : user.email.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-600 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Sign Out
+        </button>
+      </div>
     </div>
   );
 };
 
 // Dashboard Component
 const Dashboard = () => {
+  const { currentUserId } = useAuth();
   const [dashboardData, setDashboardData] = useState({
     totalContent: 0,
     totalPlaylists: 0,
@@ -113,13 +151,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [currentUserId]);
 
   const fetchDashboardData = async () => {
     try {
       const [contentResult, playlistResult] = await Promise.all([
-        apiService.getContent(),
-        apiService.getPlaylists()
+        apiService.getContent(currentUserId),
+        apiService.getPlaylists(currentUserId)
       ]);
 
       setDashboardData({
@@ -226,274 +264,47 @@ const Dashboard = () => {
   );
 };
 
-// Enhanced Advanced Scheduling Component
-const AdvancedScheduling = () => {
-  const [playlists, setPlaylists] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPlaylists();
-  }, []);
 
-  const fetchPlaylists = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/playlist`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'getAll' })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setPlaylists(result.playlists || []);
-      } else {
-        console.error('Failed to fetch playlists:', result.message);
-      }
-    } catch (error) {
-      console.error('Error fetching playlists:', error);
-      setPlaylists([]); // No fallback to demo data
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleScheduleUpdate = () => {
-    // Refresh playlists after schedule update
-    fetchPlaylists();
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
+// Main Dashboard Layout Component
+const DashboardLayout = () => {
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Schedule Management</h1>
-        <p className="text-gray-600 mt-2">
-          Manage when your playlists are active and automatically switch between them based on time.
-        </p>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 overflow-auto">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/events" element={<EventManager />} />
+          <Route path="/content" element={<ContentManager />} />
+          <Route path="/playlists" element={<PlaylistManager />} />
+          <Route path="/screens" element={<ScreenManager />} />
+          <Route path="/settings" element={<SettingsManager />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
-      
-      <ScheduleManager 
-        playlists={playlists} 
-        onScheduleUpdate={handleScheduleUpdate}
-      />
-    </div>
-  );
-};
-
-// Emergency Manager Component
-const EmergencyManager = () => {
-  const [emergencies, setEmergencies] = useState([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newEmergency, setNewEmergency] = useState({
-    title: '',
-    message: '',
-    priority: 'medium',
-    duration: 30
-  });
-
-  useEffect(() => {
-    fetchEmergencies();
-  }, []);
-
-  const fetchEmergencies = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/emergency`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'getAll' })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Transform the data structure to match frontend expectations
-        const transformedEmergencies = (result.messages || []).map(item => {
-          const emergency = item.emergency_messages || item;
-          return {
-            id: emergency.ROWID,
-            title: emergency.title,
-            message: emergency.message,
-            priority: emergency.importance,
-            duration: emergency.duration || 30,
-            is_active: emergency.is_active,
-            created_at: emergency.CREATEDTIME,
-            updated_at: emergency.MODIFIEDTIME
-          };
-        });
-        setEmergencies(transformedEmergencies);
-      }
-    } catch (error) {
-      console.error('Error fetching emergencies:', error);
-    }
-  };
-
-  const handleCreateEmergency = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/emergency`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          emergency: newEmergency
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setShowCreateForm(false);
-        setNewEmergency({ title: '', message: '', priority: 'medium', duration: 30 });
-        fetchEmergencies();
-      }
-    } catch (error) {
-      console.error('Error creating emergency:', error);
-    }
-  };
-
-  return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Emergency Messages</h1>
-          <p className="text-gray-600 mt-2">
-            Manage emergency messages that can override normal content display.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Create Emergency Message
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {emergencies.map((emergency) => (
-          <div key={emergency.id} className={`dashboard-card border-l-4 ${
-            emergency.priority === 'high' ? 'border-red-500' :
-            emergency.priority === 'medium' ? 'border-yellow-500' :
-            'border-blue-500'
-          }`}>
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{emergency.title}</h3>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                emergency.priority === 'high' ? 'bg-red-100 text-red-800' :
-                emergency.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
-                {emergency.priority}
-              </span>
-            </div>
-            <p className="text-gray-600 mb-4">{emergency.message}</p>
-            <div className="text-sm text-gray-500">
-              Duration: {emergency.duration} seconds
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Create Emergency Message</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                <input
-                  type="text"
-                  value={newEmergency.title}
-                  onChange={(e) => setNewEmergency({...newEmergency, title: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                <textarea
-                  value={newEmergency.message}
-                  onChange={(e) => setNewEmergency({...newEmergency, message: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                <select
-                  value={newEmergency.priority}
-                  onChange={(e) => setNewEmergency({...newEmergency, priority: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (seconds)</label>
-                <input
-                  type="number"
-                  value={newEmergency.duration}
-                  onChange={(e) => setNewEmergency({...newEmergency, duration: parseInt(e.target.value)})}
-                  className="w-full border rounded-lg px-3 py-2"
-                  min="1"
-                  max="300"
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateEmergency}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 function App() {
   return (
-    <Router>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 overflow-auto">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/content" element={<ContentManager />} />
-            <Route path="/playlists" element={<PlaylistManager />} />
-            <Route path="/scheduling" element={<AdvancedScheduling />} />
-            <Route path="/emergency" element={<EmergencyManager />} />
-            <Route path="/settings" element={<SettingsManager />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/callback" element={<OAuthCallback />} />
+          <Route path="/auth/callback" element={<OAuthCallback />} />
+          
+          {/* Protected Routes */}
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

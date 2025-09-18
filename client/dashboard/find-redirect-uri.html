@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Find Correct Redirect URI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-button { 
+            display: block; 
+            margin: 10px 0; 
+            padding: 10px 20px; 
+            background: #007bff; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            text-align: center;
+        }
+        .test-button:hover { background: #0056b3; }
+        .result { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+            background: #f8f9fa; 
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Find the Correct Redirect URI</h1>
+    
+    <p>This page will help you find the exact redirect URI configured in your Zoho OAuth app.</p>
+    
+    <div id="results"></div>
+    
+    <h2>Common Redirect URI Patterns:</h2>
+    
+    <h3>Localhost Variations:</h3>
+    <a href="#" class="test-button" onclick="testURI('http://localhost:3000/callback')">Test: http://localhost:3000/callback</a>
+    <a href="#" class="test-button" onclick="testURI('http://localhost:3000/auth/callback')">Test: http://localhost:3000/auth/callback</a>
+    <a href="#" class="test-button" onclick="testURI('http://localhost:3000/oauth/callback')">Test: http://localhost:3000/oauth/callback</a>
+    <a href="#" class="test-button" onclick="testURI('http://localhost:3000/login/callback')">Test: http://localhost:3000/login/callback</a>
+    
+    <h3>127.0.0.1 Variations:</h3>
+    <a href="#" class="test-button" onclick="testURI('http://127.0.0.1:3000/callback')">Test: http://127.0.0.1:3000/callback</a>
+    <a href="#" class="test-button" onclick="testURI('http://127.0.0.1:3000/auth/callback')">Test: http://127.0.0.1:3000/auth/callback</a>
+    
+    <h3>Different Ports:</h3>
+    <a href="#" class="test-button" onclick="testURI('http://localhost:3001/callback')">Test: http://localhost:3001/callback</a>
+    <a href="#" class="test-button" onclick="testURI('http://localhost:8080/callback')">Test: http://localhost:8080/callback</a>
+    
+    <h3>HTTPS Variations:</h3>
+    <a href="#" class="test-button" onclick="testURI('https://localhost:3000/callback')">Test: https://localhost:3000/callback</a>
+    
+    <div id="current-test"></div>
+    
+    <script>
+        function testURI(redirectUri) {
+            const state = Math.random().toString(36).substring(7);
+            const clientId = '1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL';
+            const scope = 'openid profile email phone';
+            const authUrl = 'https://accounts.zoho.com/oauth/v2/auth';
+            
+            const params = new URLSearchParams({
+                response_type: 'code',
+                client_id: clientId,
+                scope: scope,
+                redirect_uri: redirectUri,
+                state: state,
+                access_type: 'offline'
+            });
+            
+            const fullUrl = `${authUrl}?${params.toString()}`;
+            
+            document.getElementById('current-test').innerHTML = `
+                <div class="result">
+                    <h3>🧪 Testing: ${redirectUri}</h3>
+                    <p><strong>State:</strong> ${state}</p>
+                    <p><strong>Instructions:</strong></p>
+                    <ol>
+                        <li>Click the link below to test this redirect URI</li>
+                        <li>If you get redirected back with a code, this URI works!</li>
+                        <li>If you get "Invalid Redirect Uri", try the next one</li>
+                    </ol>
+                    <a href="${fullUrl}" target="_blank" class="test-button">🚀 Test This Redirect URI</a>
+                </div>
+            `;
+            
+            // Store for verification
+            localStorage.setItem('oauth_state', state);
+            localStorage.setItem('test_redirect_uri', redirectUri);
+        }
+        
+        // Check if we're on a callback page
+        function checkCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            
+            if (code || error) {
+                const savedState = localStorage.getItem('oauth_state');
+                const testRedirectUri = localStorage.getItem('test_redirect_uri');
+                
+                const resultClass = code ? 'success' : 'error';
+                const resultIcon = code ? '✅' : '❌';
+                const resultTitle = code ? 'SUCCESS!' : 'FAILED';
+                
+                document.getElementById('results').innerHTML = `
+                    <div class="result ${resultClass}">
+                        <h2>${resultIcon} ${resultTitle}</h2>
+                        <p><strong>Redirect URI:</strong> ${testRedirectUri || 'unknown'}</p>
+                        <p><strong>Code:</strong> ${code || 'undefined'}</p>
+                        <p><strong>State:</strong> ${state || 'undefined'}</p>
+                        <p><strong>Error:</strong> ${error || 'undefined'}</p>
+                        <p><strong>State Match:</strong> ${state === savedState ? 'YES ✅' : 'NO ❌'}</p>
+                        
+                        ${code ? `
+                            <h3>🎉 FOUND IT! This redirect URI works!</h3>
+                            <p><strong>Working URI:</strong> ${testRedirectUri}</p>
+                            <p>Now update your code to use this redirect URI.</p>
+                        ` : ''}
+                        
+                        ${error ? `
+                            <h3>❌ This redirect URI doesn't work</h3>
+                            <p>Try the next one in the list.</p>
+                        ` : ''}
+                    </div>
+                `;
+            }
+        }
+        
+        // Run check on page load
+        checkCallback();
+    </script>
+</body>
+</html>

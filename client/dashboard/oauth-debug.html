@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Debug</title>
+</head>
+<body>
+    <h1>OAuth Debug Page</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+        
+        // Display debug info
+        const debugDiv = document.getElementById('debug-info');
+        debugDiv.innerHTML = `
+            <h2>URL Parameters:</h2>
+            <p><strong>Full URL:</strong> ${window.location.href}</p>
+            <p><strong>Search:</strong> ${window.location.search}</p>
+            <p><strong>Code:</strong> ${code || 'undefined'}</p>
+            <p><strong>State:</strong> ${state || 'undefined'}</p>
+            <p><strong>Error:</strong> ${error || 'undefined'}</p>
+            <p><strong>Has Code:</strong> ${!!code}</p>
+            
+            <h2>Test API Call:</h2>
+            <button onclick="testApiCall()">Test API Call</button>
+            <div id="api-result"></div>
+        `;
+        
+        function testApiCall() {
+            if (!code) {
+                document.getElementById('api-result').innerHTML = '<p style="color: red;">No code available to test</p>';
+                return;
+            }
+            
+            const payload = {
+                action: 'exchangeCode',
+                code: code,
+                redirectUri: 'http://localhost:3000/auth/callback'
+            };
+            
+            fetch('https://atrium-60045083855.development.catalystserverless.in/auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('api-result').innerHTML = `
+                    <h3>API Response:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('api-result').innerHTML = `
+                    <h3>API Error:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

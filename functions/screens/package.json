@@ -1,0 +1,9 @@
+{
+  "name": "screens",
+  "version": "1.0.0",
+  "description": "Screen management function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "^1.0.0"
+  }
+}

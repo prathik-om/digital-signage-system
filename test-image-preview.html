@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Image Preview</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-image { max-width: 300px; border: 1px solid #ccc; margin: 10px 0; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Stratus Image Preview Test</h1>
+    
+    <h2>Test 1: Latest Uploaded Image</h2>
+    <img id="test1" class="test-image" src="https://atrium-media-development.zohostratus.in/default_user_001/1758088777781_test-preview.png" 
+         alt="Test Preview" onload="showStatus('test1', 'success')" onerror="showStatus('test1', 'error')">
+    <div id="status1" class="status" style="display: none;"></div>
+    
+    <h2>Test 2: Real Stratus Test Image</h2>
+    <img id="test2" class="test-image" src="https://atrium-media-development.zohostratus.in/default_user_001/1758088491974_real-stratus-test.png" 
+         alt="Real Stratus Test" onload="showStatus('test2', 'success')" onerror="showStatus('test2', 'error')">
+    <div id="status2" class="status" style="display: none;"></div>
+    
+    <h2>Test 3: Screenshot Image</h2>
+    <img id="test3" class="test-image" src="https://atrium-media-development.zohostratus.in/default_user_001/1758088550388_Screenshot 2025-09-16 at 4.52.43 PM.png" 
+         alt="Screenshot" onload="showStatus('test3', 'success')" onerror="showStatus('test3', 'error')">
+    <div id="status3" class="status" style="display: none;"></div>
+
+    <script>
+        function showStatus(testId, type) {
+            const statusDiv = document.getElementById('status' + testId.slice(-1));
+            const img = document.getElementById(testId);
+            
+            if (type === 'success') {
+                statusDiv.textContent = `✅ Image loaded successfully: ${img.src}`;
+                statusDiv.className = 'status success';
+            } else {
+                statusDiv.textContent = `❌ Failed to load image: ${img.src}`;
+                statusDiv.className = 'status error';
+            }
+            statusDiv.style.display = 'block';
+        }
+        
+        // Test if images are accessible
+        console.log('Testing Stratus image accessibility...');
+    </script>
+</body>
+</html>

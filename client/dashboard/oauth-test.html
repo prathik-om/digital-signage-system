@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Test</title>
+</head>
+<body>
+    <h1>OAuth Test Page</h1>
+    
+    <div id="test-info"></div>
+    
+    <button onclick="testOAuthFlow()">Test OAuth Flow</button>
+    <button onclick="generateOAuthURL()">Generate OAuth URL</button>
+    
+    <div id="oauth-url"></div>
+    
+    <script>
+        function generateOAuthURL() {
+            const state = Math.random().toString(36).substring(7);
+            const clientId = '1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL';
+            const scope = 'openid profile email phone';
+            const redirectUri = 'http://localhost:3000/auth/callback';
+            const authUrl = 'https://accounts.zoho.com/oauth/v2/auth';
+            
+            const params = new URLSearchParams({
+                response_type: 'code',
+                client_id: clientId,
+                scope: scope,
+                redirect_uri: redirectUri,
+                state: state,
+                access_type: 'offline'
+            });
+            
+            const fullUrl = `${authUrl}?${params.toString()}`;
+            
+            document.getElementById('oauth-url').innerHTML = `
+                <h3>Generated OAuth URL:</h3>
+                <p><strong>State:</strong> ${state}</p>
+                <p><strong>Redirect URI:</strong> ${redirectUri}</p>
+                <p><strong>Full URL:</strong></p>
+                <textarea style="width: 100%; height: 100px;">${fullUrl}</textarea>
+                <br><br>
+                <a href="${fullUrl}" target="_blank">Click here to test OAuth flow</a>
+            `;
+            
+            // Store state for verification
+            localStorage.setItem('oauth_state', state);
+        }
+        
+        function testOAuthFlow() {
+            // Check if we're on the callback page
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            
+            const savedState = localStorage.getItem('oauth_state');
+            
+            document.getElementById('test-info').innerHTML = `
+                <h3>OAuth Test Results:</h3>
+                <p><strong>Current URL:</strong> ${window.location.href}</p>
+                <p><strong>Code:</strong> ${code || 'undefined'}</p>
+                <p><strong>State:</strong> ${state || 'undefined'}</p>
+                <p><strong>Error:</strong> ${error || 'undefined'}</p>
+                <p><strong>Saved State:</strong> ${savedState || 'undefined'}</p>
+                <p><strong>State Match:</strong> ${state === savedState ? 'YES' : 'NO'}</p>
+                <p><strong>Has Code:</strong> ${!!code}</p>
+            `;
+            
+            if (code) {
+                // Test API call
+                testApiCall(code);
+            }
+        }
+        
+        function testApiCall(code) {
+            const payload = {
+                action: 'exchangeCode',
+                code: code,
+                redirectUri: 'http://localhost:3000/auth/callback'
+            };
+            
+            fetch('https://atrium-60045083855.development.catalystserverless.in/auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('test-info').innerHTML += `
+                    <h3>API Test Result:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('test-info').innerHTML += `
+                    <h3>API Test Error:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            });
+        }
+        
+        // Auto-run test if we're on callback
+        if (window.location.search) {
+            testOAuthFlow();
+        }
+    </script>
+</body>
+</html>

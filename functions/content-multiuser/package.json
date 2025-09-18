@@ -1,0 +1,9 @@
+{
+  "name": "content-multiuser",
+  "version": "1.0.0",
+  "description": "Multi-user content management function for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  }
+}

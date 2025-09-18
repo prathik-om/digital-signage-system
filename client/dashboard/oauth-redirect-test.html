@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Redirect URI Test</title>
+</head>
+<body>
+    <h1>OAuth Redirect URI Test</h1>
+    
+    <p>This page will test different redirect URIs to find the correct one.</p>
+    
+    <div id="test-results"></div>
+    
+    <h2>Test Different Redirect URIs:</h2>
+    <button onclick="testRedirectURI('http://localhost:3000/auth/callback')">Test: localhost:3000/auth/callback</button>
+    <button onclick="testRedirectURI('http://localhost:3000/callback')">Test: localhost:3000/callback</button>
+    <button onclick="testRedirectURI('http://127.0.0.1:3000/auth/callback')">Test: 127.0.0.1:3000/auth/callback</button>
+    <button onclick="testRedirectURI('http://localhost:3001/auth/callback')">Test: localhost:3001/auth/callback</button>
+    
+    <div id="current-test"></div>
+    
+    <script>
+        function testRedirectURI(redirectUri) {
+            const state = Math.random().toString(36).substring(7);
+            const clientId = '1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL';
+            const scope = 'openid profile email phone';
+            const authUrl = 'https://accounts.zoho.com/oauth/v2/auth';
+            
+            const params = new URLSearchParams({
+                response_type: 'code',
+                client_id: clientId,
+                scope: scope,
+                redirect_uri: redirectUri,
+                state: state,
+                access_type: 'offline'
+            });
+            
+            const fullUrl = `${authUrl}?${params.toString()}`;
+            
+            document.getElementById('current-test').innerHTML = `
+                <h3>Testing Redirect URI: ${redirectUri}</h3>
+                <p><strong>State:</strong> ${state}</p>
+                <p><strong>Full URL:</strong></p>
+                <textarea style="width: 100%; height: 100px;">${fullUrl}</textarea>
+                <br><br>
+                <a href="${fullUrl}" target="_blank" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Test This Redirect URI</a>
+                <br><br>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Click the link above</li>
+                    <li>Complete the OAuth flow on Zoho</li>
+                    <li>Check if you get redirected back with a code</li>
+                    <li>If successful, note which redirect URI worked</li>
+                </ol>
+            `;
+            
+            // Store state for verification
+            localStorage.setItem('oauth_state', state);
+            localStorage.setItem('test_redirect_uri', redirectUri);
+        }
+        
+        // Check if we're on a callback page
+        function checkCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            
+            if (code || error) {
+                const savedState = localStorage.getItem('oauth_state');
+                const testRedirectUri = localStorage.getItem('test_redirect_uri');
+                
+                document.getElementById('test-results').innerHTML = `
+                    <h2>🎉 OAuth Callback Received!</h2>
+                    <p><strong>Code:</strong> ${code || 'undefined'}</p>
+                    <p><strong>State:</strong> ${state || 'undefined'}</p>
+                    <p><strong>Error:</strong> ${error || 'undefined'}</p>
+                    <p><strong>Saved State:</strong> ${savedState || 'undefined'}</p>
+                    <p><strong>State Match:</strong> ${state === savedState ? 'YES ✅' : 'NO ❌'}</p>
+                    <p><strong>Working Redirect URI:</strong> ${testRedirectUri || 'unknown'}</p>
+                    <p><strong>Has Code:</strong> ${!!code ? 'YES ✅' : 'NO ❌'}</p>
+                    
+                    ${code ? `
+                        <h3>✅ SUCCESS! This redirect URI works!</h3>
+                        <p>Update your Zoho OAuth app to use: <strong>${testRedirectUri}</strong></p>
+                        <p>Or update our code to use this redirect URI.</p>
+                    ` : ''}
+                    
+                    ${error ? `
+                        <h3>❌ OAuth Error:</h3>
+                        <p style="color: red;">${error}</p>
+                    ` : ''}
+                `;
+            }
+        }
+        
+        // Run check on page load
+        checkCallback();
+    </script>
+</body>
+</html>

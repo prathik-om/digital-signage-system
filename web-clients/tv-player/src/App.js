@@ -34,7 +34,7 @@ const GATEWAY_BASE = 'https://atrium-60045083855.development.catalystserverless.
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ data })
+        body: JSON.stringify(data)
       });
       
       if (!response.ok) {
@@ -93,23 +93,9 @@ function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDisplaySettings = async () => {
-    try {
-      console.log('🔧 [TV Player] Fetching display settings...');
-      const response = await callCatalystFunction('settings', { action: 'getDisplaySettings' });
-      
-      if (response.success && response.settings) {
-        console.log('🔧 [TV Player] Display settings fetched:', response.settings);
-        setDisplaySettings(prevSettings => ({
-          ...prevSettings,
-          ...response.settings
-        }));
-      } else {
-        console.warn('🔧 [TV Player] Failed to fetch display settings, using defaults');
-      }
-    } catch (error) {
-      console.error('🔧 [TV Player] Error fetching display settings:', error);
-      // Continue with default settings
-    }
+    // Settings function removed - use default settings
+    console.log('🔧 [TV Player] Using default display settings (settings function removed)');
+    // Keep default settings as they are already initialized
   };
 
   // Helper function to apply default timer logic to content
@@ -202,7 +188,7 @@ function App() {
           const playlistData = activePlaylist.playlists || activePlaylist;
           setCurrentPlaylist(playlistData);
           
-          console.log('🔍 [TV Player] ✅ ACTIVE PLAYLIST FOUND:', playlistData.name);
+          console.log('🔍 [TV Player] ✅ ACTIVE PLAYLIST FOUND:', playlistData.name, 'Duration:', playlistData.duration, 'seconds');
           
           if (playlistData && playlistData.items) {
             let playlistItems;
@@ -240,16 +226,19 @@ function App() {
                 );
                 
                 if (mediaObject) {
+                  // Reset skip count on successful media object found
+                  window.playlistSkipCount = 0;
+                  
                   const content = {
                     id: mediaObject.ROWID || Date.now(),
                     type: mediaObject.mime_type?.startsWith('video/') ? 'video' : 'image',
                     url: mediaObject.object_url,
-                    duration: nextItem.duration || 10,
+                    duration: playlistData.duration || nextItem.duration || 10, // Use playlist duration first
                     title: mediaObject.file_name || nextItem.name || nextItem.title || 'Digital Signage Content',
                     source: 'playlist' // Mark as playlist content (not Zoho CLiq)
                   };
                   
-                  console.log('🔍 [TV Player] ✅ SHOWING ACTIVE PLAYLIST CONTENT:', content.title);
+                  console.log('🔍 [TV Player] ✅ SHOWING ACTIVE PLAYLIST CONTENT:', content.title, 'Duration:', content.duration, 'seconds');
                   
                   // Prevent multiple content changes
                   if (isContentChangingRef.current) {
@@ -268,9 +257,47 @@ function App() {
                   return;
                 } else {
                   console.warn('🔍 [TV Player] Media object not found for playlist item:', nextItem);
-                  // Skip this item and try the next one by calling fetchContent again
-                  setTimeout(() => fetchContent(), 100);
-                  return;
+                  
+                  // Add safety mechanism to prevent infinite loops
+                  if (!window.playlistSkipCount) window.playlistSkipCount = 0;
+                  window.playlistSkipCount++;
+                  
+                  if (window.playlistSkipCount > playlistItems.length * 2) {
+                    console.error('🔍 [TV Player] Too many failed attempts, creating fallback content');
+                    window.playlistSkipCount = 0;
+                    
+                    // Create fallback content for content without media objects
+                    const fallbackContent = {
+                      id: nextItem.id || Date.now(),
+                      type: 'text',
+                      text: `Content: ${nextItem.title || nextItem.name || 'Digital Signage Content'}`,
+                      title: nextItem.title || nextItem.name || 'Digital Signage Content',
+                      duration: playlistData.duration || nextItem.duration || 10,
+                      source: 'playlist-fallback'
+                    };
+                    
+                    console.log('🔍 [TV Player] ✅ SHOWING FALLBACK CONTENT:', fallbackContent.title);
+                    
+                    // Prevent multiple content changes
+                    if (isContentChangingRef.current) {
+                      console.log('🔍 [TV Player] Content change already in progress, skipping...');
+                      return;
+                    }
+                    
+                    isContentChangingRef.current = true;
+                    setCurrentContent(applyDefaultTimer(fallbackContent));
+                    
+                    // Reset the flag after a short delay
+                    setTimeout(() => {
+                      isContentChangingRef.current = false;
+                    }, 1000);
+                    
+                    return;
+                  } else {
+                    // Skip this item and try the next one
+                    setTimeout(() => fetchContent(), 100);
+                    return;
+                  }
                 }
               }
             } else {
@@ -293,47 +320,119 @@ function App() {
         console.log('🔍 [TV Player] Scheduled playlist handling - TODO: implement if needed');
       }
       
-      // PRIORITY 3: DEFAULT CLIQ MESSAGES (Fallback)
-      console.log('🔍 [TV Player] 3. No active/scheduled playlists, falling back to Cliq messages...');
+      // PRIORITY 3: DEFAULT FALLBACK IMAGE (Fallback)
+      console.log('🔍 [TV Player] 3. No active/scheduled playlists, showing default fallback image...');
+      try {
+        const fallbackResponse = await callCatalystFunction('content', { action: 'getDefaultFallbackImage' });
+        
+        if (fallbackResponse.success && fallbackResponse.fallbackImage) {
+          const fallbackImage = fallbackResponse.fallbackImage;
+          console.log('🔍 [TV Player] ✅ SHOWING DEFAULT FALLBACK IMAGE:', fallbackImage.title);
+          
+          const content = {
+            id: fallbackImage.id,
+            type: fallbackImage.type,
+            url: fallbackImage.url,
+            title: fallbackImage.title,
+            duration: fallbackImage.duration,
+            source: fallbackImage.source
+          };
+          
+          setCurrentContent(applyDefaultTimer(content));
+          return;
+        }
+      } catch (fallbackError) {
+        console.log('🔍 [TV Player] Default fallback image not available, trying Cliq messages...');
+      }
+      
+      // PRIORITY 3.5: CLIQ MESSAGES (Secondary Fallback)
+      console.log('🔍 [TV Player] 3.5. Trying Cliq messages as secondary fallback...');
       try {
         const cliqResponse = await callCatalystFunction('content', { action: 'getLiveCliqMessages', limit: 10 });
         
-        if (cliqResponse.success && cliqResponse.files && cliqResponse.files.length > 0) {
-          // Check if there are newer messages than the current one
+        if (cliqResponse.success && cliqResponse.playlist) {
+          // Use the default "Zoho Cliq Content" playlist
+          const playlistData = cliqResponse.playlist;
+          console.log('🔍 [TV Player] ✅ USING DEFAULT ZOHO CLIQ CONTENT PLAYLIST:', playlistData.name);
+          
+          setCurrentPlaylist(playlistData);
+          
+          if (playlistData && playlistData.items) {
+            let playlistItems;
+            try {
+              playlistItems = typeof playlistData.items === 'string' 
+                ? JSON.parse(playlistData.items) 
+                : playlistData.items;
+            } catch (e) {
+              console.error('🔍 [TV Player] Error parsing Cliq playlist items:', e);
+              playlistItems = [];
+            }
+            
+            if (playlistItems.length > 0) {
+              // Get the next item in sequence
+              const currentIndex = currentContentIndexRef.current;
+              const nextIndex = (currentIndex + 1) % playlistItems.length;
+              const nextItem = playlistItems[nextIndex];
+              
+              console.log('🔍 [TV Player] Cycling Cliq playlist - Current index:', currentIndex, 'Next index:', nextIndex);
+              
+              // Update indices
+              setCurrentContentIndex(nextIndex);
+              currentContentIndexRef.current = nextIndex;
+              
+              // Get media details
+              const mediaResponse = await callCatalystFunction('media-upload', { action: 'listMedia' });
+              
+              if (mediaResponse.success && mediaResponse.media) {
+                const mediaObject = mediaResponse.media.find(m => 
+                  m.ROWID === nextItem.media_object_id || 
+                  m.ROWID === nextItem.id ||
+                  m.file_name === nextItem.name ||
+                  m.file_name === nextItem.file_name
+                );
+                
+                if (mediaObject) {
+                  const content = {
+                    id: mediaObject.ROWID || Date.now(),
+                    type: mediaObject.mime_type?.startsWith('video/') ? 'video' : 'image',
+                    url: mediaObject.object_url,
+                    duration: playlistData.duration || 15,
+                    title: mediaObject.file_name || nextItem.name || nextItem.title || 'Zoho Cliq Content',
+                    source: 'zoho_cliq_playlist'
+                  };
+                  
+                  console.log('🔍 [TV Player] ✅ SHOWING CLIQ PLAYLIST CONTENT:', content.title);
+                  setCurrentContent(applyDefaultTimer(content));
+                  return;
+                } else {
+                  console.warn('🔍 [TV Player] Media object not found for Cliq playlist item:', nextItem);
+                  // Fall through to next priority
+                }
+              }
+            } else {
+              console.log('🔍 [TV Player] Cliq playlist is empty, falling back to next priority...');
+            }
+          }
+        } else if (cliqResponse.success && cliqResponse.files && cliqResponse.files.length > 0) {
+          // Fallback to old Cliq messages format
+          console.log('🔍 [TV Player] Using legacy Cliq messages format');
           const currentContentId = currentContent?.id;
           const sortedMessages = cliqResponse.files.sort((a, b) => 
             new Date(b.CREATEDTIME || b.created_at || b.timestamp || 0) - 
             new Date(a.CREATEDTIME || a.created_at || a.timestamp || 0)
           );
           
-          // If we have a current content, check if there are newer messages
           let nextItem;
           if (currentContentId && currentContent?.source === 'zoho_cliq') {
-            // Find if there's a newer message
-            const newerMessage = sortedMessages.find(msg => 
-              (msg.ROWID || msg.id) !== currentContentId && 
-              new Date(msg.CREATEDTIME || msg.created_at || msg.timestamp || 0) > 
-              new Date(currentContent.CREATEDTIME || currentContent.created_at || currentContent.timestamp || 0)
-            );
-            
-            if (newerMessage) {
-              // Show the newest message immediately
-              nextItem = newerMessage;
-              console.log('🔍 [TV Player] Found newer message, showing immediately:', newerMessage.title || newerMessage.content);
-            } else {
-              // Continue with sequential display
-              const currentIndex = currentContentIndexRef.current;
-              const nextIndex = (currentIndex + 1) % cliqResponse.files.length;
-              nextItem = cliqResponse.files[nextIndex];
-            }
+            const currentIndex = currentContentIndexRef.current;
+            const nextIndex = (currentIndex + 1) % cliqResponse.files.length;
+            nextItem = cliqResponse.files[nextIndex];
           } else {
-            // No current content or not a Cliq message, show the newest
             nextItem = sortedMessages[0];
           }
           
-          console.log('🔍 [TV Player] Showing Cliq message:', nextItem.title || nextItem.content);
+          console.log('🔍 [TV Player] Showing legacy Cliq message:', nextItem.title || nextItem.content);
           
-          // Update indices - find the index of the selected item
           const selectedIndex = cliqResponse.files.findIndex(item => 
             (item.ROWID || item.id) === (nextItem.ROWID || nextItem.id)
           );
@@ -342,16 +441,15 @@ function App() {
           
           const content = {
             id: nextItem.ROWID || Date.now(),
-            type: 'text', // Cliq messages are text-based
+            type: 'text',
             text: nextItem.content || nextItem.title || 'Zoho Cliq Message',
             title: nextItem.title || 'Zoho Cliq',
-            duration: 15, // 15 seconds for Cliq messages as per your requirements
+            duration: 15,
             source: 'zoho_cliq',
-            url: null, // Text content doesn't need a URL
-            CREATEDTIME: nextItem.CREATEDTIME || nextItem.created_at || nextItem.timestamp // Include timestamp
+            url: null,
+            CREATEDTIME: nextItem.CREATEDTIME || nextItem.created_at || nextItem.timestamp
           };
           
-          console.log('🔍 [TV Player] Setting current content from Cliq messages:', content);
           setCurrentContent(applyDefaultTimer(content));
           return;
         }

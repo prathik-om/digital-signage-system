@@ -1,0 +1,9 @@
+{
+  "name": "test-simple",
+  "version": "1.0.0",
+  "description": "Simple test function",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  }
+}

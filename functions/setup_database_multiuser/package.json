@@ -1,0 +1,9 @@
+{
+  "name": "setup-database-multiuser",
+  "version": "1.0.0",
+  "description": "Multi-user database schema setup for digital signage system",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "latest"
+  }
+}

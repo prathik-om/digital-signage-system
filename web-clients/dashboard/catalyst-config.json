@@ -1,0 +1,25 @@
+{
+  "name": "dashboard",
+  "version": "1.0.0",
+  "description": "Digital Signage Dashboard",
+  "build": {
+    "command": "npm run build",
+    "output": "build"
+  },
+  "routes": [
+    {
+      "path": "/static/*",
+      "target": "/static/*"
+    },
+    {
+      "path": "/*",
+      "target": "/index.html"
+    }
+  ],
+  "environment": {
+    "REACT_APP_API_BASE_URL": "https://atrium-60045083855.development.catalystserverless.in",
+    "REACT_APP_ZOHO_CLIENT_ID": "1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL",
+    "REACT_APP_ZOHO_REDIRECT_URI": "https://atrium-60045083855.development.catalystserverless.in/dashboard/auth/callback",
+    "NODE_ENV": "production"
+  }
+}

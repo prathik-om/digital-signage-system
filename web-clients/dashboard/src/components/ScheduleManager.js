@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, Calendar, Settings, Save, X, AlertTriangle, CheckCircle, Info, ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Users, Building } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/en-gb';
+import { API_BASE_URL, API_ENDPOINTS } from '../config';
 
 // Enhanced API service for events and playlists
 const eventAPI = {
   async createEventWithPlaylist(eventData) {
     try {
-      const response = await fetch('/playlist', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.playlist}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -28,7 +29,7 @@ const eventAPI = {
 
   async getEvents() {
     try {
-      const response = await fetch('/content', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.content}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

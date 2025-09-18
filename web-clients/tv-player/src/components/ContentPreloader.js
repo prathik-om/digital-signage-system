@@ -5,18 +5,17 @@ const ContentPreloader = ({ playlist, currentIndex }) => {
   const preloadQueueRef = useRef([]);
   const isPreloadingRef = useRef(false);
 
-  // Optimize image URL for better performance
+  // Optimize image URL for better performance with CORS proxy
   const optimizeImageUrl = (url, type = 'image') => {
     if (!url) return url;
     
-    // For Zoho Stratus URLs, return the original URL without optimization parameters
-    // Zoho Stratus doesn't support URL-based optimization parameters
-    if (url.includes('zohostratus.com') || url.includes('atrium-media')) {
-      return url; // Return original URL without modification
+    // For external URLs (like Zoho Stratus), use our CORS proxy
+    if (url.includes('zohostratus.com') || url.includes('atrium-media') || url.startsWith('https://')) {
+      // Use the development proxy to avoid CORS issues
+      return `http://localhost:3001/proxy-image?url=${encodeURIComponent(url)}`;
     }
     
-    // For other URLs, you could add optimization parameters if supported
-    // For now, return the original URL
+    // For relative/local URLs, return as-is
     return url;
   };
 

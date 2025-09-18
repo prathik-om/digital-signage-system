@@ -1,0 +1,10 @@
+{
+  "execution": {
+    "main": "index.js"
+  },
+  "deployment": {
+    "stack": "node18",
+    "name": "events",
+    "type": "advancedio"
+  }
+}

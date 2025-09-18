@@ -8,8 +8,11 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/apiService';
 
-const EmergencyManager = ({ user }) => {
+const EmergencyManager = () => {
+  const { currentUserId } = useAuth();
   const [emergencies, setEmergencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -21,31 +24,38 @@ const EmergencyManager = ({ user }) => {
 
   useEffect(() => {
     fetchEmergencies();
-  }, []);
+  }, [currentUserId]);
 
   const fetchEmergencies = async () => {
     try {
-      // Mock data - in real app, this would be an API call
-      setEmergencies([
-        {
-          id: 1,
-          message: 'Fire alarm test - please evacuate building',
-          priority: 'high',
-          duration: 60,
-          is_active: true,
-          created_at: '2024-01-15T14:30:00Z',
-          created_by: 'admin@example.com'
-        },
-        {
-          id: 2,
-          message: 'Maintenance in progress - elevator temporarily unavailable',
-          priority: 'medium',
-          duration: 30,
-          is_active: false,
-          created_at: '2024-01-15T10:15:00Z',
-          created_by: 'admin@example.com'
-        }
-      ]);
+      console.log('Fetching emergencies for user:', currentUserId);
+      const result = await apiService.getEmergencyMessages(currentUserId);
+      
+      if (result.success && result.emergencies) {
+        setEmergencies(result.emergencies);
+      } else {
+        // Fallback to mock data if API fails
+        setEmergencies([
+          {
+            id: 1,
+            message: 'Fire alarm test - please evacuate building',
+            priority: 'high',
+            duration: 60,
+            is_active: true,
+            created_at: '2024-01-15T14:30:00Z',
+            created_by: currentUserId
+          },
+          {
+            id: 2,
+            message: 'Maintenance in progress - elevator temporarily unavailable',
+            priority: 'medium',
+            duration: 30,
+            is_active: false,
+            created_at: '2024-01-15T10:15:00Z',
+            created_by: currentUserId
+          }
+        ]);
+      }
     } catch (error) {
       console.error('Error fetching emergencies:', error);
     } finally {

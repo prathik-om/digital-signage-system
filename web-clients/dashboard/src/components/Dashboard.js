@@ -8,8 +8,11 @@ import {
   Clock,
   Eye
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/apiService';
 
 const Dashboard = ({ user }) => {
+  const { currentUserId } = useAuth();
   const [stats, setStats] = useState({
     totalContent: 0,
     activePlaylists: 0,
@@ -21,44 +24,73 @@ const Dashboard = ({ user }) => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [currentUserId]); // Re-fetch when user changes
 
   const fetchDashboardData = async () => {
     try {
-      // In a real app, these would be API calls to your Zoho Catalyst functions
-      // For now, using mock data
+      setLoading(true);
+      
+      // Fetch data from real APIs with user context
+      const [contentResponse, playlistResponse, emergencyResponse] = await Promise.all([
+        apiService.getContent(currentUserId),
+        apiService.getPlaylists(currentUserId),
+        apiService.getEmergencyMessages(currentUserId)
+      ]);
+
+      // Update stats with real data
       setStats({
-        totalContent: 24,
-        activePlaylists: 3,
-        emergencyMessages: 1,
-        totalViews: 1250
+        totalContent: contentResponse.success ? contentResponse.content.length : 0,
+        activePlaylists: playlistResponse.success ? playlistResponse.playlists.length : 0,
+        emergencyMessages: emergencyResponse.success ? emergencyResponse.emergency_messages.length : 0,
+        totalViews: 1250 // This would come from analytics API
       });
 
-      setRecentActivity([
-        {
+      // Generate recent activity from the fetched data
+      const activities = [];
+      
+      if (contentResponse.success && contentResponse.content.length > 0) {
+        const latestContent = contentResponse.content[0];
+        activities.push({
           id: 1,
           type: 'content',
-          action: 'Uploaded new image',
-          item: 'event-banner.jpg',
-          time: '2 hours ago'
-        },
-        {
+          action: 'Content available',
+          item: latestContent.title,
+          time: new Date(latestContent.created_at).toLocaleString()
+        });
+      }
+
+      if (playlistResponse.success && playlistResponse.playlists.length > 0) {
+        const latestPlaylist = playlistResponse.playlists[0];
+        activities.push({
           id: 2,
           type: 'playlist',
-          action: 'Created playlist',
-          item: 'Main Event Playlist',
-          time: '4 hours ago'
-        },
-        {
+          action: 'Playlist available',
+          item: latestPlaylist.name,
+          time: new Date(latestPlaylist.created_at).toLocaleString()
+        });
+      }
+
+      if (emergencyResponse.success && emergencyResponse.emergency_messages.length > 0) {
+        const latestEmergency = emergencyResponse.emergency_messages[0];
+        activities.push({
           id: 3,
           type: 'emergency',
-          action: 'Emergency message sent',
-          item: 'Fire alarm test',
-          time: '1 day ago'
-        }
-      ]);
+          action: 'Emergency message',
+          item: latestEmergency.title,
+          time: new Date(latestEmergency.CREATEDTIME).toLocaleString()
+        });
+      }
+
+      setRecentActivity(activities);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Fallback to mock data if API fails
+      setStats({
+        totalContent: 0,
+        activePlaylists: 0,
+        emergencyMessages: 0,
+        totalViews: 0
+      });
     } finally {
       setLoading(false);
     }

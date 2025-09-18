@@ -1,0 +1,10 @@
+{
+  "execution": {
+    "main": "index.js"
+  },
+  "deployment": {
+    "stack": "node18",
+    "name": "setup_database_multiuser",
+    "type": "advancedio"
+  }
+}

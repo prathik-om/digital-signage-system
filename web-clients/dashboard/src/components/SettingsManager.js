@@ -1,91 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL, getCatalystAuthHeaders } from '../config';
-import { Save, Timer, Monitor, CheckCircle } from 'lucide-react';
+import { Save, CheckCircle, Image, Eye } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const SettingsManager = ({ user }) => {
-  const [defaultTimer, setDefaultTimer] = useState(15);
+const SettingsManager = () => {
+  const { currentUserId } = useAuth();
+  const [defaultFallbackImage, setDefaultFallbackImage] = useState({
+    url: 'https://www.zohowebstatic.com/sites/zweb/images/commonroot/zoho-logo-web.svg',
+    title: 'Zoho Logo - Default Fallback',
+    duration: 10
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
-    fetchDefaultTimer();
-  }, []);
+    fetchDefaultFallbackImage();
+  }, [currentUserId]);
 
-  const fetchDefaultTimer = async () => {
+
+  const fetchDefaultFallbackImage = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/settings`, {
+      console.log('Fetching default fallback image configuration');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001'}/content`, {
         method: 'POST',
-        headers: getCatalystAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          data: { action: 'getDisplaySettings' }
+          action: 'getDefaultFallbackImage'
         })
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.settings.default_slide_timer) {
-          setDefaultTimer(result.settings.default_slide_timer);
-        }
-      } else {
-        setError('Failed to fetch current timer setting');
+      
+      const result = await response.json();
+      if (result.success && result.fallbackImage) {
+        setDefaultFallbackImage({
+          url: result.fallbackImage.url,
+          title: result.fallbackImage.title,
+          duration: result.fallbackImage.duration || 10
+        });
+        setImagePreview(result.fallbackImage.url);
       }
     } catch (error) {
-      console.error('Error fetching timer setting:', error);
-      setError('Error fetching timer setting: ' + error.message);
+      console.error('Error fetching default fallback image:', error);
+      setError('Error fetching fallback image settings: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTimerChange = (value) => {
-    const newValue = parseInt(value) || 0;
-    setDefaultTimer(newValue);
-    setHasChanges(newValue !== defaultTimer);
+
+  const handleImageUrlChange = (url) => {
+    setDefaultFallbackImage(prev => ({ ...prev, url }));
+    setImagePreview(url);
+    setHasChanges(true);
   };
 
-  const saveTimer = async () => {
+  const handleImageTitleChange = (title) => {
+    setDefaultFallbackImage(prev => ({ ...prev, title }));
+    setHasChanges(true);
+  };
+
+  const handleImageDurationChange = (duration) => {
+    setDefaultFallbackImage(prev => ({ ...prev, duration: parseInt(duration) || 10 }));
+    setHasChanges(true);
+  };
+
+
+  const saveSettings = async () => {
     try {
       setSaving(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/settings`, {
+      // Save fallback image setting
+      console.log('Saving fallback image setting');
+      const imageResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001'}/content`, {
         method: 'POST',
-        headers: getCatalystAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          data: {
-            action: 'updateSetting',
-            setting_key: 'default_slide_timer',
-            setting_value: defaultTimer
-          }
+          action: 'updateDefaultFallbackImage',
+          fallbackImage: defaultFallbackImage
         })
       });
+      
+      const imageResult = await imageResponse.json();
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setSuccessMessage('Timer setting saved successfully!');
-          setHasChanges(false);
-          setTimeout(() => setSuccessMessage(null), 3000);
-        } else {
-          setError(result.message || 'Failed to save timer setting');
-        }
+      if (imageResult.success) {
+        setSuccessMessage('Fallback image settings saved successfully!');
+        setHasChanges(false);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        setError('Failed to save timer setting');
+        setError('Failed to save fallback image settings');
       }
     } catch (error) {
-      console.error('Error saving timer setting:', error);
-      setError('Error saving timer setting: ' + error.message);
+      console.error('Error saving settings:', error);
+      setError('Error saving settings: ' + error.message);
     } finally {
       setSaving(false);
     }
   };
 
   const resetToDefault = () => {
-    setDefaultTimer(15);
+    setDefaultFallbackImage({
+      url: 'https://www.zohowebstatic.com/sites/zweb/images/commonroot/zoho-logo-web.svg',
+      title: 'Zoho Logo - Default Fallback',
+      duration: 10
+    });
+    setImagePreview('https://www.zohowebstatic.com/sites/zweb/images/commonroot/zoho-logo-web.svg');
     setHasChanges(true);
   };
 
@@ -105,54 +131,140 @@ const SettingsManager = ({ user }) => {
       {/* Header */}
       <div className="mb-8 text-center">
         <div className="flex items-center justify-center space-x-3 mb-4">
-          <Timer className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Timer Settings</h1>
+          <Image className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Fallback Image Settings</h1>
         </div>
         <p className="text-gray-600 text-lg">
-          Configure the universal timer for all content types
+          Configure the default image shown when no content is available
         </p>
       </div>
 
-      {/* Main Timer Setting */}
+
+      {/* Default Fallback Image Setting */}
       <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-            Universal Default Timer
+            Default Fallback Image
           </h2>
           <p className="text-gray-600">
-            This setting controls how long each slide is displayed by default across all content types
+            This image is shown when no active playlists or content are available
           </p>
         </div>
 
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <label htmlFor="defaultTimer" className="block text-sm font-medium text-gray-700 mb-2">
-                Default Duration (seconds)
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Configuration Form */}
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="fallbackImageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                Image URL
               </label>
               <input
-                id="defaultTimer"
+                id="fallbackImageUrl"
+                type="url"
+                value={defaultFallbackImage.url}
+                onChange={(e) => handleImageUrlChange(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="https://example.com/your-image.jpg"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Enter a direct URL to your image (JPG, PNG, GIF supported)
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="fallbackImageTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                Image Title
+              </label>
+              <input
+                id="fallbackImageTitle"
+                type="text"
+                value={defaultFallbackImage.title}
+                onChange={(e) => handleImageTitleChange(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Default Fallback Image"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="fallbackImageDuration" className="block text-sm font-medium text-gray-700 mb-2">
+                Display Duration (seconds)
+              </label>
+              <input
+                id="fallbackImageDuration"
                 type="number"
-                value={defaultTimer}
-                onChange={(e) => handleTimerChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-center"
+                value={defaultFallbackImage.duration}
+                onChange={(e) => handleImageDurationChange(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 min="1"
                 max="300"
                 step="1"
               />
             </div>
-            <div className="text-gray-500 text-sm">
-              seconds
+
+            {/* Quick Presets */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Presets
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleImageUrlChange('https://www.zohowebstatic.com/sites/zweb/images/commonroot/zoho-logo-web.svg')}
+                  className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Zoho Logo
+                </button>
+                <button
+                  onClick={() => handleImageUrlChange('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSIjMjU2M2ViIi8+Cjx0ZXh0IHg9Ijk2MCIgeT0iNTQwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5XZWxjb21lPC90ZXh0Pgo8L3N2Zz4K')}
+                  className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Welcome Message
+                </button>
+                <button
+                  onClick={() => handleImageUrlChange('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSIjMDU5NjY5Ii8+Cjx0ZXh0IHg9Ijk2MCIgeT0iNTQwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5QbGVhc2UgV2FpdDwvdGV4dD4KPC9zdmc+Cg==')}
+                  className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Please Wait
+                </button>
+                <button
+                  onClick={() => handleImageUrlChange('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSIjN2MzYWVkIi8+Cjx0ZXh0IHg9Ijk2MCIgeT0iNTQwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5TeXN0ZW0gT2ZmbGluZTwvdGV4dD4KPC9zdmc+Cg==')}
+                  className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  System Offline
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-center space-x-3">
-            <button
-              onClick={resetToDefault}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              Reset to 15s
-            </button>
+          {/* Image Preview */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-gray-500" />
+              <h3 className="text-lg font-medium text-gray-900">Preview</h3>
+            </div>
+            
+            <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Fallback image preview"
+                  className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSIjRkY0NDQ0Ii8+Cjx0ZXh0IHg9Ijk2MCIgeT0iNTQwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+Cjwvc3ZnPgo=';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-64 flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <Image className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <p>No image preview available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+              <p><strong>Tip:</strong> Use high-resolution images (1920x1080 or higher) for best display quality on your TV screens.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -173,14 +285,22 @@ const SettingsManager = ({ user }) => {
               </div>
             )}
           </div>
-          <button
-            onClick={saveTimer}
-            disabled={saving || !hasChanges}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
-          >
-            <Save className="h-4 w-4" />
-            <span>{saving ? 'Saving...' : 'Save Timer Setting'}</span>
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={resetToDefault}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Reset to Default
+            </button>
+            <button
+              onClick={saveSettings}
+              disabled={saving || !hasChanges}
+              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              <Save className="h-4 w-4" />
+              <span>{saving ? 'Saving...' : 'Save Fallback Image'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -197,44 +317,6 @@ const SettingsManager = ({ user }) => {
         </div>
       )}
 
-      {/* Content Type Examples */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-          How the Universal Timer Works
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Monitor className="h-6 w-6 text-blue-600" />
-            </div>
-            <h4 className="font-medium text-gray-900 mb-2">Playlist Items</h4>
-            <p className="text-sm text-gray-600">
-              Use default timer unless custom duration is set during playlist creation
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Timer className="h-6 w-6 text-green-600" />
-            </div>
-            <h4 className="font-medium text-gray-900 mb-2">Zoho Cliq Messages</h4>
-            <p className="text-sm text-gray-600">
-              Always use the universal default timer
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <CheckCircle className="h-6 w-6 text-orange-600" />
-            </div>
-            <h4 className="font-medium text-gray-900 mb-2">Emergency Content</h4>
-            <p className="text-sm text-gray-600">
-              Always use the universal default timer
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Pro Tip */}
       <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
         <div className="flex items-start space-x-3">
@@ -246,9 +328,9 @@ const SettingsManager = ({ user }) => {
           <div>
             <h3 className="font-semibold text-yellow-800 mb-2">Pro Tip</h3>
             <p className="text-yellow-700">
-              <strong>One setting controls everything!</strong> Change this timer and it will affect all content types 
-              immediately. Playlist items can still have custom durations set during creation, but everything else 
-              will use this universal default.
+              <strong>Your fallback image is Priority Level 3!</strong> This image will be shown on your TV displays 
+              when no active or scheduled playlists are available. Make sure to use high-resolution images 
+              (1920x1080 or higher) for the best display quality.
             </p>
           </div>
         </div>

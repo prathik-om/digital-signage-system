@@ -11,7 +11,11 @@
       "playlist",
       "zoho-integration",
       "media-upload",
-      "settings"
+      "settings",
+      "setup_database_multiuser",
+      "test-simple",
+      "events",
+      "screens"
     ],
     "deployment": {
       "stack": "node18"
@@ -91,12 +95,24 @@
     {
       "source": "web-clients/dashboard",
       "name": "dashboard"
+    },
+    {
+      "source": "web-clients/tv-player",
+      "name": "tv-player"
     }
   ],
   "slate": [
     {
       "name": "dashboard-app",
-      "source": "/Users/prathik-5897/Desktop/ProjectorP/web-clients/dashboard"
+      "source": "web-clients/dashboard"
+    },
+    {
+      "name": "tv-player-app",
+      "source": "web-clients/tv-player"
     }
-  ]
+  ],
+  "client": {
+    "source": "tv-app",
+    "plugin": "zcatalyst-cli-plugin-react"
+  }
 }

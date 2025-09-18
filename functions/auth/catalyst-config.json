@@ -6,5 +6,9 @@
     "stack": "node18",
     "name": "auth",
     "type": "advancedio"
+  },
+  "environment": {
+    "ZOHO_CLIENT_ID": "1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL",
+    "ZOHO_CLIENT_SECRET": "f3095200dfc571690de631ebe22b8c15685d074f31"
   }
 }
