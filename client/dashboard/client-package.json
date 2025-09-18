@@ -23,7 +23,7 @@
   },
   "environment": {
     "REACT_APP_API_BASE_URL": "https://atrium-60045083855.development.catalystserverless.in",
-    "REACT_APP_ZOHO_CLIENT_ID": "1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL",
+    "REACT_APP_ZOHO_CLIENT_ID": "YOUR_NEW_CLIENT_ID_HERE",
     "REACT_APP_ZOHO_REDIRECT_URI": "https://atrium-60045083855.development.catalystserverless.in/dashboard/auth/callback",
     "NODE_ENV": "production"
   }

@@ -47,7 +47,7 @@ const config = {
   
   // Zoho OAuth Configuration
   ZOHO_OAUTH: {
-    clientId: process.env.REACT_APP_ZOHO_CLIENT_ID || '1000.A7GBW3AR476CCTVPXTK10OXJ8CRNXL',
+    clientId: process.env.REACT_APP_ZOHO_CLIENT_ID || 'YOUR_CLIENT_ID_HERE',
     redirectUri: process.env.REACT_APP_ZOHO_REDIRECT_URI || (isDevelopment ? 'http://localhost:3000/auth/callback' : 'https://atrium-60045083855.development.catalystserverless.in/dashboard/auth/callback'),
     scope: 'openid profile email phone',
     authUrl: 'https://accounts.zoho.in/oauth/v2/auth',
